@@ -67,7 +67,7 @@ En el 2010 IBM libera la version MQTT 3.
 El patron de MQTT Publish/Subscribe provee una alternativa para la arquitectura tradicional cliente-servidor. En el modelo cliente-servidor, un cliente se comunica directamente con un endpoint. Mientras que **el modelo pub/sub desacopla al cliente que envia un mensaje (el publicador) de el cliente o los clientes que reciben los mensajes (los subscriptores)**. Asi el publicador y el subscriptor nunca tienen contacto, inclusive ellos se pueden encontrar en diferentes existencias. **La coneccion entre ellos es resuelta por un tercer componente llamado broker**. 
 El trabajo del **broker** es la  **filtración de todos los mensajes  entrantes** y **distribuirlos** entre ellos.
 
-![](2022-10-08-07-53-14.png)
+![](2022-10-08-09-18-13.png)
 
 Se recuerda que **el aspecto mas importante es el desacople del publicador del mensaje y el subscriptor**. 
 
@@ -80,3 +80,45 @@ El desacople de las dimensiones tiene que ser:
 #### Resumen
 En resumen, la **Arquitectura o modelo MQTT pub/sub** elimina la comunicación directa entre el publicador de el mensaje y el receptor/subcriptor. **La actividad de filtración de el broker** que  esto sea posible, a traves del control de mensajes que se envian a los cliente/subscriptor. Y el desacople tiene tres dimensiones: en espacio, tiempo y sincronización.
 
+### Escalabilidad
+De acuerdo con [hivemq.com](https://www.hivemq.com/blog/mqtt-essentials-part2-publish-subscribe/), MQTT tiene una mejor escalabilidad que el clasico protocolo cliente-servidor, debido a que las operaciones sobre el broker puede ser realizada paralelamente y los mensajes puede ser procesador en un camino  *event-driven*.
+
+El *atrapado/catching* de mensajes y la inteligencia de enrutamiento de los mensajes son generalmente uno de los factores de incremento en la escalabilidad. Sin embargo, escalarlo a millones de conecciones es un verdadero reto. Ya que en un alto nivel de conecciones puede ser logradas a traves de la clusterizacion de nodos del broker para distribuir la carga de trabajo a mas servidores individuale, y de esta manera usar balanceadores de carga. 
+
+## Filtrado de Mensajes
+Las siguientes opciones de filtrado tiene un broker:
+
+### Opcion 1: *SUBJECT BASED FILTERING*
+Este es un filtrado basado en el *subject*/tema/topico que es parte de cada mensaje. Y el cliente se subscribira al broker unicamente a los topicos de interes.
+De cualquier punto que se encuentre encendido, el broker asegura que el ciente obtenga todos los mensajes publicados al llamado **subscribed topics**.
+
+En general, los topics son cadenas de textos con una estructura jerarquica que permita filtrado sobre un numero limitado de expresiones.
+
+### Opcion 2: *CONTENT-BASED FILTERING*
+
+En este filtrado, el broker filtrara los mensajes basados sobre un contenido especifico (filter-language). Lo recibido por los cientes esta subscrito a una **consulta filtrada** (filter queries) de mensajes para los cuales se este interesado. 
+Este contenido debe conecerse con antelación y no puede cifrarse, ni cambiarse facilmente.
+### Opcion 3: *TYPE-BASED FILTERING*
+Cuando se usa lenguajes con paradigma OOP, el filtrado puede ser basado sobre los tipos/clases de un mensaje, esta es una practica comun. 
+
+Por ejemplo, un subscriptor puede listar todos los mensajes los cuales son de `type Exception` o algun `sub-type`.
+
+Claro, que el pub/sub no es la respuesta para todos los casos de uso, existen casos exclusivos en los cuales se deben considerar para utilizar este modelo. 
+
+El desacoplemiento del *publisher* y el *suscriber* es la clave de pub/sub, pero presenta un pequeño reto. Este reto puede ser explicado debido a que ambos deben conocer los topicos que es van a usar. Otra cuestión seria que el publicador puede que publique temas, y puede que no exista ningun subscriptor leyendo. 
+
+### Caracteriticas Clave del MQTT
+
+Como se menciono antes tenemos:
+1. El desacople por espacio del *publisher* y el *subscriber*. Para publicar o recibir un mensaje, los *publishers* y *suscribers* unicamente necesitan saber **el hostname/IP y el puerto del broker**.
+2. El desacople por tiempo, a pesar que MQTT puede lograr entregar mensajes en tiempos cercanos al tiempo real, si deseamos, **el broker puede almacenar mensajes para los clientes que no se encuentran online**.
+
+Y son dos condiciones para almacenar mensajes: El cliente tiene que conectarse con una **sesión persistente** y **suscribirse a un topico** con una calidad de servicio (QoS) mucho mayor a cero.
+
+3. El MQTT trabaja asincronamente, debido a que la mayoria de librerias de clientes funcionan asincronamente y estan basados en `callbacks` o algun modelo similar, las tareas no se bloquean mientras esperan por un mensaje o publicación de algun mensaje.
+
+En ciertos casos de uso, la sincronia es posible y deseable, para esperar por un cierto mesaje, algunas librerías tiene APIs sincronas, pero el flujo usualmente es asincrono.
+
+Como se dijo antes, es que MQTT es relativamente mas facil utilizar de **lado del cliente**. Los sistemas pub/sub tienen la lógica sobre el **lado del broker**.
+
+**MQTT usa el filtrado basado en subject de los mensajes**, cada mensaje contiene un *subject* que el broker puede usar para determinar lo que el cliente desea de su subcripción.
